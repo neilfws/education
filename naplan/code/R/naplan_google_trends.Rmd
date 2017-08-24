@@ -1,0 +1,84 @@
+---
+title: "NAPLAN in Google Trends"
+author: "Neil Saunders"
+date: "compiled `r Sys.time()`"
+output:
+  html_document:
+    keep_md: yes
+    number_sections: yes
+    theme: flatly
+    toc: yes
+    toc_float: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
+                      fig.path = "../../figures/",
+                      dev = c("png", "pdf"),
+                      fig.width = 11, fig.height = 8.5)
+library(readr)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(lubridate)
+library(knitr)
+
+theme_set(theme_light())
+
+# read data
+# search 'naplan'
+naplan_search_trends <- read_csv("~/Dropbox/projects/github_projects/education/naplan/data/naplan_search_trends.csv", 
+    skip = 2)
+
+# search 'naplan tests' vs 'naplan results'
+naplan_search_trends_compare <- read_csv("~/Dropbox/projects/github_projects/education/naplan/data/naplan_search_trends_compare.csv", 
+    skip = 2)
+```
+
+# Introduction
+Visualising Google Trends data for searches related to NAPLAN testing.
+
+# Datasets
+1. CSV file with the results of a basic search for the term "naplan"
+1. CSV file with the results of a comparative search for the terms "naplan tests, naplan results"
+
+# Visualisation
+## Basic search
+Observations:
+
+1. We see 2 peaks per year, corresponding to testing and release of results
+1. Interest was high in 2010-11, declined, then a recent rise - related to discussion of online tests?
+
+```{r plot-basic-search}
+naplan_search_trends %>% 
+  mutate(Date = as_date(paste0(Month, "-01"))) %>% 
+  filter(Date > as_date("2007-12-31")) %>% 
+  ggplot(aes(Date, `NAPLAN: (Australia)`)) + 
+  geom_line(color = "#008acc") + 
+    scale_x_date(date_breaks = "1 year", date_labels = "%Y") + 
+    labs(y = "search volume", 
+         title = "Australian Searches for term: naplan", 
+         subtitle = "Source: Google Trends, 2008 - August 2017")
+```
+
+## Comparative search
+Observations:
+
+1. We see more clearly that the early peak corresponds to "tests", the later to "results"
+1. In 2008: no peak for "results" inside the "tests" peak
+1. In 2009: 1 peak for "results" inside the "tests" peak
+1. From 2010: 2 peaks for results inside the "tests" peak, near the start and end of that peak
+
+```{r plot-comparative-search}
+naplan_search_trends_compare %>% 
+  gather(search, value, -Month) %>% 
+  mutate(Date = as_date(paste0(Month, "-01"))) %>% 
+  filter(Date > as_date("2007-12-31")) %>% 
+  ggplot(aes(Date, value)) + 
+    geom_line(aes(group = search, color = search)) + 
+    scale_x_date(date_breaks = "1 year", date_labels = "%Y") + 
+    scale_color_manual(values = c("darkorange", "#008acc")) + 
+    labs(y = "search volume", 
+         title = "Australian searches for terms: naplan tests, naplan results", 
+         subtitle = "Source: Google Trends, 2008 - August 2017")
+```
